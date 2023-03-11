@@ -1,71 +1,55 @@
-const TicTacToe = (function () {
-    // new game board
-    const board = new Array(9).fill(null);
+/*
+ * Main Gameboard Constructor and maintainer
+ */
+const Gameboard = (() => {
+    const board = new Array(9).fill("");
+    const getBoard = () => board;
+    const reset = () => board.fill("");
+    const setBoard = (index, symbol) => (board[index] = symbol);
+    const isSpaceAvailable = () => board.includes("");
+
+    return {
+        getBoard,
+        reset,
+        setBoard,
+        isSpaceAvailable,
+    };
+})();
+
+/*
+ * Player object constructor
+ */
+const Player = (name, symbol) => {
+    const getName = () => name;
+    const getSymbol = () => symbol;
+    return {
+        getName,
+        getSymbol,
+    };
+};
+
+/*
+ * Main Gameflow
+ */
+const Game = (() => {
+    const Player1 = Player("Amit", "x");
+    const Computer = Player("Computer", "o");
+    let isGameOver = false;
+    let currentPlayer = Player1;
+    const board = Gameboard.getBoard();
+
+    // DOM elements
+    const squares = document.querySelectorAll(".game_board > div");
+    const resetBTN = document.querySelector(".resetBTN");
+    const displayWinner = document.querySelector(".announcement");
+    const playAgainBTN = document.querySelector(".announcement > a");
+    const winnerDeclaration = document.querySelector(".winner");
     const xSymbol = "./assets/x.png";
     const oSymbol = "./assets/o.png";
-    let currentPlayer = "x";
-    let isGameOver = false;
 
-    //selecting all the sqaures from game board
-    const squares = document.querySelectorAll(".game_board > div");
-    const announcement = document.querySelector(".announcement");
-    const winnerText = document.querySelector(".announcement > p");
-
-    // Main game function, initializer
-    const init = () => {
-        squares.forEach((square) => {
-            square.addEventListener("click", () => {
-                const squareIndex = Array.from(squares).indexOf(square);
-                if (
-                    !isGameOver &&
-                    square.textContent === "" &&
-                    board[squareIndex] === null
-                ) {
-                    board[squareIndex] = currentPlayer;
-                    const img = document.createElement("img");
-                    img.src = xSymbol;
-                    square.appendChild(img);
-                    winner();
-                    switchPlayer();
-
-                    if (!isGameOver) {
-                        computerMove();
-                    }
-                }
-            });
-        });
-    };
-
-    // Computer's Move
-    const computerMove = () => {
-        const randomIndex = randomIndex_Generator();
-        const displaySquare = Array.from(squares)[randomIndex];
-        board[randomIndex] = currentPlayer;
-        const img = document.createElement("img");
-        img.src = oSymbol;
-        displaySquare.appendChild(img);
-        winner();
-        switchPlayer();
-    };
-
-    // Generating a random number
-    const randomIndex_Generator = () => {
-        // generating a Array of empty places
-        const emptyIndices = board.reduce((acc, val, index) => {
-            if (val === null) {
-                acc.push(index);
-            }
-            return acc;
-        }, []);
-        // selecting a random place from the array which is empty
-        const randomIndex =
-            emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
-        return randomIndex;
-    };
-
-    // Checking for the Winner
-    const winner = () => {
-        const winningVariations = [
+    // Checking for game winner
+    const checkWinner = (winnerName) => {
+        const winner = [
             [0, 1, 2],
             [3, 4, 5],
             [6, 7, 8],
@@ -75,63 +59,89 @@ const TicTacToe = (function () {
             [0, 4, 8],
             [2, 4, 6],
         ];
-
-        // checking if any variations from above array matches.
-        for (let i = 0; i < winningVariations.length; i++) {
-            const [a, b, c] = winningVariations[i];
-            // checking
+        for (let i = 0; i < winner.length; i++) {
+            const [a, b, c] = winner[i];
             if (board[a] && board[a] === board[b] && board[a] === board[c]) {
                 isGameOver = true;
-                announcement.classList.add("visible");
-                winnerText.textContent = `${currentPlayer} has been WON`;
+                winnerDeclaration.textContent = `${winnerName} has been won`;
+                displayWinner.classList.add("visible");
+                return true;
             }
         }
-        // checking and declaring "TIE", if nobody managed to WIN
-        if (!board.includes(null) && !isGameOver) {
-            announcement.classList.add("visible");
-            winnerText.textContent = `It is a TIE`;
-        }
-    };
-
-    const switchPlayer = () => {
-        if (currentPlayer === "x") {
-            currentPlayer = "o";
+        // Checking for TIE
+        if (!isGameOver && !board.includes("")) {
+            winnerDeclaration.textContent = `TIE`;
+            displayWinner.classList.add("visible");
         } else {
-            currentPlayer = "x";
+            return false;
         }
     };
 
-    // Making Virtual board null again, and all squares go blank again
-    const reset = () => {
-        board.fill(null);
+    // After each payer's move wsitcging the player
+    const switchPlayer = () => {
+        currentPlayer = currentPlayer === Player1 ? Computer : Player1;
+    };
+
+    // On click of reset & playAgain btn resetting the display and Gameboard
+    const resetGame = () => {
+        Gameboard.reset();
+        isGameOver = false;
+        displayWinner.classList.remove("visible");
+        winnerDeclaration.textContent = "";
         squares.forEach((square) => {
-            const img = square.querySelector("img");
+            const img = document.querySelector("img");
             if (img) {
                 img.remove();
             }
         });
-        currentPlayer = "x";
-        isGameOver = false;
-        announcement.classList.remove("visible");
     };
 
-    return {
-        init,
-        reset,
+    // Displaying the ongoing Game on Webpage
+    const displaySymbol = (square, symbol) => {
+        const img = document.createElement("img");
+        img.src = symbol;
+        square.appendChild(img);
+    };
+
+    // Handing the Webpage clicks
+    resetBTN.addEventListener("click", resetGame);
+    playAgainBTN.addEventListener("click", resetGame);
+
+    squares.forEach((square) => {
+        square.addEventListener("click", () => {
+            const squareIndex = Array.from(squares).indexOf(square);
+            if (Gameboard.getBoard()[squareIndex] === "") {
+                Gameboard.setBoard(squareIndex, Player1.getSymbol());
+                displaySymbol(square, xSymbol);
+                checkWinner(Player1.getName());
+                switchPlayer();
+                if (!isGameOver && board.includes("")) {
+                    computerMove();
+                }
+            }
+        });
+    });
+
+    // Generating a random number from available spaces of gameboard for computer's move
+    const randomIndex_Generator = () => {
+        const emptyIndices = board.reduce((acc, val, index) => {
+            if (val === "") {
+                acc.push(index);
+            }
+            return acc;
+        }, []);
+        const randomIndex =
+            emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+        return randomIndex;
+    };
+
+    // Computer's move
+    const computerMove = () => {
+        const randomIndex = randomIndex_Generator();
+        const displaySquare = Array.from(squares)[randomIndex];
+        Gameboard.setBoard(randomIndex, Computer.getSymbol());
+        displaySymbol(displaySquare, oSymbol);
+        checkWinner(Computer.getName());
+        switchPlayer();
     };
 })();
-
-// Game Initializer
-TicTacToe.init();
-
-// onBoard Reset Button
-const resetBTN = document.querySelector(".resetBTN");
-resetBTN.addEventListener("click", () => {
-    TicTacToe.reset();
-});
-
-// Popup reply button
-const replayBTN = document.querySelector(".announcement > a");
-replayBTN.addEventListener("click", () => {
-    TicTacToe.reset();
-});

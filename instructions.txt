@@ -1,0 +1,27 @@
+Instructions:-
+create a TicTacToe game using javascript, store the gameboard as an array inside of a Gameboard object, players are also going to be stored in objects, makem an object to control the flow of the game itself.
+
+main goal is to have little to no global code as possible. if you only ever need ONE of something (gameBoard, displayController), use a module. 
+
+If you need multiples of something (players!), create them with factories.  write a JavaScript function that will render the contents of the gameboard array to the webpage (for now you can just manually fill in the array with "X"s and "O"s). 
+
+Build the functions that allow players to add marks to a specific spot on the board, and then tie it to the DOM, letting players click on the gameboard to place their marker. 
+
+Don’t forget the logic that keeps players from playing in spots that are already taken! Each little piece of functionality should be able to fit in the game, player or gameboard objects. 
+
+Take care to put them in “logical” places. Build the logic that checks for when the game is over! Should check for 3-in-a-row and a tie. 
+
+Allow players to put in their names, include a button to start/restart the game and add a display element that congratulates the winning player!  create an AI so that a player can play against the computer! create an unbeatable AI using the minimax algorithm.
+
+
+
+PsuedoCode:-
+1- Create a module for the game board object, which will store the game board as an array and have methods for updating the board and checking for a win or tie.
+2- Create a module for the player object, which will store the player's name and marker (X or O).
+3- Create a factory function for creating new player objects.
+4- Create a module for the game object, which will control the flow of the game and manage the game board and players.
+5- Write a function that will render the contents of the game board array to the webpage, using HTML and CSS to create the game board and display the markers.
+6- Write functions that allow players to add marks to a specific spot on the board when they click on the game board, and add logic to prevent players from playing in spots that are already taken.
+7- Add logic to the game object that checks for a win or tie, and displays a congratulatory message to the winning player.
+8- Allow players to enter their names and start/restart the game using buttons on the webpage.
+9- Create an AI opponent using JavaScript, using the minimax algorithm to make the AI unbeatable.

@@ -144,4 +144,35 @@ body {
 .visible {
     visibility: visible;
     backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+}
+
+@media screen and (min-width: 375px) and (max-width: 600px) {
+    .container {
+        margin-top: 50px;
+        width: 350px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .container > * {
+        margin-bottom: 70px;
+    }
+
+    .button_area {
+        text-align: center;
+    }
+
+    .game_board {
+        grid-template-columns: repeat(3, 120px);
+        grid-template-rows: repeat(3, 120px);
+    }
+
+    .announcement p {
+        font-size: 2rem;
+    }
+
+    .announcement a {
+        font-size: 1.5rem;
+    }
 }
