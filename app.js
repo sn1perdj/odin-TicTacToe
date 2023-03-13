@@ -7,24 +7,28 @@ const Gameboard = (() => {
     const reset = () => board.fill("");
     const setBoard = (index, symbol) => (board[index] = symbol);
     const isSpaceAvailable = () => board.includes("");
+    const resetSquare = (index) => (board[index] = "");
 
     return {
         getBoard,
         reset,
         setBoard,
         isSpaceAvailable,
+        resetSquare,
     };
 })();
 
 /*
  * Player object constructor
  */
-const Player = (name, symbol) => {
+const Player = (name, symbol, score) => {
     const getName = () => name;
     const getSymbol = () => symbol;
+    const getScore = () => score;
     return {
         getName,
         getSymbol,
+        score,
     };
 };
 
@@ -32,8 +36,8 @@ const Player = (name, symbol) => {
  * Main Gameflow
  */
 const Game = (() => {
-    const Player1 = Player("Amit", "x");
-    const Computer = Player("Computer", "o");
+    const Player1 = Player("Amit", "x", 0);
+    const Computer = Player("Computer", "o", 0);
     let isGameOver = false;
     let currentPlayer = Player1;
     const board = Gameboard.getBoard();
@@ -44,6 +48,8 @@ const Game = (() => {
     const displayWinner = document.querySelector(".announcement");
     const playAgainBTN = document.querySelector(".announcement > a");
     const winnerDeclaration = document.querySelector(".winner");
+    const player_score = document.querySelector(".player_score");
+    const pc_score = document.querySelector(".pc_score");
     const xSymbol = "./assets/x.png";
     const oSymbol = "./assets/o.png";
 
@@ -62,19 +68,10 @@ const Game = (() => {
         for (let i = 0; i < winner.length; i++) {
             const [a, b, c] = winner[i];
             if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-                isGameOver = true;
-                winnerDeclaration.textContent = `${winnerName} has been won`;
-                displayWinner.classList.add("visible");
                 return true;
             }
         }
-        // Checking for TIE
-        if (!isGameOver && !board.includes("")) {
-            winnerDeclaration.textContent = `TIE`;
-            displayWinner.classList.add("visible");
-        } else {
-            return false;
-        }
+        return false;
     };
 
     // After each payer's move wsitcging the player
@@ -83,7 +80,7 @@ const Game = (() => {
     };
 
     // On click of reset & playAgain btn resetting the display and Gameboard
-    const resetGame = () => {
+    const resetGameState = () => {
         Gameboard.reset();
         isGameOver = false;
         displayWinner.classList.remove("visible");
@@ -104,8 +101,14 @@ const Game = (() => {
     };
 
     // Handing the Webpage clicks
-    resetBTN.addEventListener("click", resetGame);
-    playAgainBTN.addEventListener("click", resetGame);
+    resetBTN.addEventListener("click", () => {
+        resetGameState();
+        Player1.score = 0;
+        Computer.score = 0;
+        player_score.textContent = 0;
+        pc_score.textContent = 0;
+    });
+    playAgainBTN.addEventListener("click", resetGameState);
 
     squares.forEach((square) => {
         square.addEventListener("click", () => {
@@ -113,35 +116,102 @@ const Game = (() => {
             if (Gameboard.getBoard()[squareIndex] === "") {
                 Gameboard.setBoard(squareIndex, Player1.getSymbol());
                 displaySymbol(square, xSymbol);
-                checkWinner(Player1.getName());
-                switchPlayer();
-                if (!isGameOver && board.includes("")) {
-                    computerMove();
+                if (checkWinner()) {
+                    Player1.score++;
+                    winnerDeclaration.textContent = `${Player1.getName()} has been won`;
+                    displayWinner.classList.add("visible");
+                    player_score.textContent = Player1.score;
+                    isGameOver = true;
+                } else if (!isGameOver && !board.includes("")) {
+                    winnerDeclaration.textContent = `TIE`;
+                    displayWinner.classList.add("visible");
+                } else {
+                    switchPlayer();
+                    if (!isGameOver && board.includes("")) {
+                        computerMove();
+                    }
                 }
             }
         });
     });
 
-    // Generating a random number from available spaces of gameboard for computer's move
-    const randomIndex_Generator = () => {
+    // to get all the available spaces inside the board
+    const getAvailableMoves = () => {
         const emptyIndices = board.reduce((acc, val, index) => {
             if (val === "") {
                 acc.push(index);
             }
             return acc;
         }, []);
-        const randomIndex =
-            emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
-        return randomIndex;
+        return emptyIndices;
     };
 
     // Computer's move
     const computerMove = () => {
-        const randomIndex = randomIndex_Generator();
-        const displaySquare = Array.from(squares)[randomIndex];
-        Gameboard.setBoard(randomIndex, Computer.getSymbol());
+        const availableMoves = getAvailableMoves();
+        let bestMove;
+        let bestScore = -Infinity;
+
+        for (let i = 0; i < availableMoves.length; i++) {
+            const move = availableMoves[i];
+            Gameboard.setBoard(move, Computer.getSymbol());
+            const score = minimax(Gameboard.getBoard(), false);
+            Gameboard.resetSquare(move);
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = move;
+            }
+        }
+
+        Gameboard.setBoard(bestMove, Computer.getSymbol());
+        const displaySquare = Array.from(squares)[bestMove];
         displaySymbol(displaySquare, oSymbol);
-        checkWinner(Computer.getName());
-        switchPlayer();
+
+        if (checkWinner()) {
+            Computer.score++;
+            winnerDeclaration.textContent = `${Computer.getName()} has been won`;
+            displayWinner.classList.add("visible");
+            pc_score.textContent = Computer.score;
+        } else if (!checkWinner()) {
+            switchPlayer();
+        }
+    };
+
+    // Applied the minimax algorithm
+    const minimax = (board, depth, isMaximizing) => {
+        if (checkWinner()) {
+            if (currentPlayer === Computer) {
+                return 10 - depth;
+            } else {
+                return depth - 10;
+            }
+        } else if (!board.includes("")) {
+            return 0;
+        }
+
+        if (isMaximizing) {
+            let bestScore = -Infinity;
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] === "") {
+                    board[i] = Computer.getSymbol();
+                    const score = minimax(board, depth + 1, false);
+                    board[i] = "";
+                    bestScore = Math.max(score, bestScore);
+                }
+            }
+            return bestScore;
+        } else {
+            let bestScore = Infinity;
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] === "") {
+                    board[i] = Player1.getSymbol();
+                    const score = minimax(board, depth + 1, true);
+                    board[i] = "";
+                    bestScore = Math.min(score, bestScore);
+                }
+            }
+            return bestScore;
+        }
     };
 })();
