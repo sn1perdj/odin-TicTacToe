@@ -206,7 +206,12 @@ const Game = (() => {
             for (let i = 0; i < board.length; i++) {
                 if (board[i] === "") {
                     board[i] = Player1.getSymbol();
-                    const score = minimax(board, depth + 1, true);
+                    let score;
+                if (checkWinner(Player1)) {
+                    score = depth - 10;
+                } else {
+                    score = minimax(board, depth + 1, true);
+                }
                     board[i] = "";
                     bestScore = Math.min(score, bestScore);
                 }
